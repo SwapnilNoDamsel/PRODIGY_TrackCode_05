@@ -1,0 +1,32 @@
+from scapy.all import sniff, IP, TCP, UDP, ICMP, Raw
+from datetime import datetime
+
+def analyze_packet(packet):
+    if IP in packet:
+        src_ip = packet[IP].src
+        dst_ip = packet[IP].dst
+        protocol = packet[IP].proto
+
+        proto_name = "ICMP" if ICMP in packet else \
+                     "TCP" if TCP in packet else \
+                     "UDP" if UDP in packet else \
+                     f"Proto {protocol}"
+
+        timestamp = datetime.fromtimestamp(packet.time)
+
+        print(f"[{timestamp}] {src_ip} -> {dst_ip} | Protocol: {proto_name}")
+
+        if TCP in packet:
+            print(f"  Ports: {packet[TCP].sport} -> {packet[TCP].dport}")
+        elif UDP in packet:
+            print(f"  Ports: {packet[UDP].sport} -> {packet[UDP].dport}")
+
+        if Raw in packet:
+            payload = bytes(packet[Raw].load)
+            preview = payload[:50].decode(errors="replace")
+            print(f"  Payload (first 50 bytes): {preview}")
+
+        print("-" * 60)
+
+print("Starting packet capture... Press Ctrl+C to stop.")
+sniff(prn=analyze_packet, store=False)
